@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: traffic_redis
+    ports:
+      - "6389:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1
+
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: traffic_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: traffic_db
+      POSTGRES_USER: traffic_user
+      POSTGRES_PASSWORD: traffic_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Auto-run SQL migrations on database setup
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/schema_v2.sql:/docker-entrypoint-initdb.d/02-schema_v2.sql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: traffic_app
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://traffic_user:traffic_pass@postgres:5432/traffic_db
+      - REDIS_URL=redis://redis:6379
+      - ALLOWED_ORIGINS=http://localhost:8000,http://localhost:5173,http://localhost:5174,http://192.168.1.5:8000,http://192.168.1.5:5173,http://192.168.1.5:5174,http://192.168.139.3:8000,http://192.168.139.3:5173,http://192.168.139.3:5174
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
+      - ENABLE_GEMINI_EVENT_ESTIMATION=${ENABLE_GEMINI_EVENT_ESTIMATION:-true}
+    depends_on:
+      - postgres
+      - redis
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: traffic_simulator
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    entrypoint: ["python", "/app/simulator/simulator.py"]
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+  postgres_data:

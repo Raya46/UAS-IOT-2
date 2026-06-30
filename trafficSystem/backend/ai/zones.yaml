@@ -1,0 +1,64 @@
+zones:
+  - id: zone_parking_001
+    name: No Parking Zone 1
+    type: no_parking
+    enabled: true
+    points:
+      - [350, 200]
+      - [420, 200]
+      - [480, 540]
+      - [300, 540]
+    rule_config:
+      min_seconds: 5.0
+
+  - id: zone_shoulder_001
+    name: Shoulder Lane Zone 1
+    type: shoulder_lane
+    enabled: true
+    points:
+      - [530, 200]
+      - [580, 200]
+      - [950, 540]
+      - [750, 540]
+    rule_config:
+      min_seconds: 2.0
+
+  - id: zone_stop_line_001
+    name: Red Light Stop Line 1
+    type: red_light_stop_line
+    enabled: true
+    points:
+      - [100, 450]
+      - [800, 450]
+      - [800, 520]
+      - [100, 520]
+
+  - id: zone_u_turn_001
+    name: Forbidden U-Turn Area 1
+    type: u_turn_forbidden
+    enabled: true
+    points:
+      - [300, 350]
+      - [600, 350]
+      - [600, 550]
+      - [300, 550]
+
+  - id: zone_lane_a_001
+    name: Lane A
+    type: lane_a
+    enabled: true
+    points:
+      - [150, 400]
+      - [450, 400]
+      - [400, 700]
+      - [100, 700]
+
+  - id: zone_lane_b_001
+    name: Lane B
+    type: lane_b
+    enabled: true
+    points:
+      - [460, 400]
+      - [750, 400]
+      - [800, 700]
+      - [410, 700]

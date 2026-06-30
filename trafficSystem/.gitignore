@@ -1,0 +1,79 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python Cache and Compilation
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+.cfg
+.manifest
+.spec
+
+# Node/Frontend dependencies and builds
+node_modules/
+frontend/dist/
+frontend/node_modules/
+.npm
+.eslintcache
+
+# Local Environment Configurations (Secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env.local
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# SQLite Database files (if any are created locally)
+*.db
+*.sqlite3
+
+# Large model files
+*.pt
+backend/models/*.pt
+backend/data/dashcam_videos/*.mp4
+
+# Training datasets & outputs
+backend/models/MOBIL.v3i.yolov8/
+backend/models/tj.v1i.yolov8/
+backend/models/*_train/
+backend/runs/
+backend/outputs/

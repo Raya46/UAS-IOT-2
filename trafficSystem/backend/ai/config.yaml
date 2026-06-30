@@ -1,0 +1,456 @@
+app:
+  window_name: "HAYDEN AI Clone MVP"
+  show_fps: true
+  resize_width: 960
+  draw_center_points: true
+
+source:
+  default: 0
+  type: "cctv"
+  camera_id: "jaklingko_001"
+  route_id: "route_001"
+  road_segment_id: "segment_001"
+
+models:
+  vehicle_model_path: "models/yolov8s.pt"
+  use_plate_model: true
+  plate_model_path: "models/indonesian_plate.pt"
+  use_sign_model: true
+  sign_model_path: "models/traffic_sign.pt"
+  use_traffic_sign_model: true
+  traffic_sign_model_path: "models/jaklingko_sign.pt"
+  use_transport_model: true
+  transport_model_path: "models/transport_category.pt"
+  use_lane_model: true
+  lane_model_path: "models/yolov8m-lane-seg.pt"
+  lane_process_interval_frames: 5
+  use_yolop_model: false
+  yolop_process_interval_frames: 10
+
+detection:
+  interval_frames: 3
+  confidence: 0.25
+  iou: 0.45
+  allowed_classes:
+    - car
+    - motorcycle
+    - bus
+    - truck
+    - bicycle
+    - person
+    - jaklingko
+    - angkot_merah
+    - angkot_hijau
+    - angkot_biru
+    - transjakarta
+    - metrotrans
+    - rambu_stop_jaklingko
+    - traffic_light
+    - "traffic light"
+
+tracking:
+  max_match_distance_pixels: 150
+  max_disappeared_seconds: 5.0
+  movement_threshold_pixels: 8
+  stopped_seconds_threshold: 2
+  stationary_drift_pixels: 25
+
+violation:
+  illegal_parking_seconds: 5
+  evidence_cooldown_seconds: 20
+  save_once_per_track: true
+
+zone:
+  no_parking_polygon:
+    - [80, 300]
+    - [620, 300]
+    - [780, 700]
+    - [20, 700]
+
+traffic:
+  medium_vehicle_count: 5
+  high_vehicle_count: 12
+  severe_vehicle_count: 20
+  high_stopped_ratio: 0.3
+  severe_stopped_ratio: 0.5
+  cctv_stopped_seconds_threshold: 15.0
+
+ocr:
+  enabled: true
+  generate_mock_on_failure: false
+  languages:
+    - en
+  min_text_confidence: 0.15
+  plate_regex: "^[A-Z]{1,2}\\s?[0-9]{1,4}\\s?[A-Z]{0,3}$"
+
+source_profiles:
+  default:
+    scenario_label: "Generic traffic feed"
+    enabled_violations:
+      - illegal_parking
+      - shoulder_lane_violation
+      - red_light_violation
+      - illegal_u_turn
+      - unsafe_lane_change
+      - traffic_sign_violation
+    priority:
+      - illegal_parking
+      - traffic_sign_violation
+      - illegal_u_turn
+      - red_light_violation
+      - unsafe_lane_change
+      - shoulder_lane_violation
+    perspective_src: [[364, 216], [595, 216], [912, 513], [48, 513]]
+    perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+  by_filename:
+    angkot-berhenti-sembarangan.mp4:
+      scenario_label: "Angkot berhenti / parkir sembarangan"
+      source_type: "cctv"
+      enabled_violations:
+        - illegal_parking
+      priority:
+        - illegal_parking
+      target_classes:
+        illegal_parking:
+          - car
+          - bus
+          - truck
+      rule_config:
+        illegal_parking:
+          min_seconds: 4.0
+      max_events_per_violation:
+        illegal_parking: 1
+      perspective_src: [[350, 200], [610, 200], [950, 540], [100, 540]]
+      perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+    angkot-parkir-sembarangan.mp4:
+      scenario_label: "Angkot parkir sembarangan"
+      source_type: "cctv"
+      enabled_violations:
+        - illegal_parking
+      priority:
+        - illegal_parking
+      target_classes:
+        illegal_parking:
+          - bus
+          - angkot_biru
+          - angkot_hijau
+          - angkot_merah
+      rule_config:
+        illegal_parking:
+          min_seconds: 4.0
+      zones:
+        no_parking:
+          - [[0, 250], [960, 250], [960, 545], [0, 545]]
+      max_events_per_violation:
+        illegal_parking: 1
+      perspective_src: [[350, 200], [610, 200], [950, 540], [100, 540]]
+      perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+    mobil-yang-parkir-pada-kanan-kiri-ruas-jalan-tertib.mp4:
+      scenario_label: "Parkir tertib, hanya motor putar arah sebagai kandidat"
+      enabled_violations:
+        - illegal_u_turn
+      priority:
+        - illegal_u_turn
+      target_classes:
+        illegal_u_turn:
+          - motorcycle
+      zones:
+        u_turn_forbidden:
+          - [[560, 240], [960, 240], [960, 545], [560, 545]]
+      max_events_per_violation:
+        illegal_u_turn: 1
+    taksi-berputar-arah-di-lampu-merah-yang-dilarang.mp4:
+      scenario_label: "Rambu dilarang belok kanan dilanggar kendaraan depan"
+      enabled_violations:
+        - traffic_sign_violation
+      priority:
+        - traffic_sign_violation
+      target_classes:
+        traffic_sign_violation:
+          - car
+      zones:
+        traffic_sign:
+          - [[70, 360], [380, 360], [390, 670], [35, 670]]
+      max_events_per_violation:
+        traffic_sign_violation: 1
+    Bus Prima Jasa dan Toyota Camry, menyalip dari bahu jalan dan memaksa masuk.Entrance Rest A.mp4:
+      scenario_label: "Bahu jalan / forced merge"
+      enabled_violations:
+        - shoulder_lane_violation
+      priority:
+        - shoulder_lane_violation
+      max_events_per_violation:
+        shoulder_lane_violation: 3
+    mobil-putih-menerobos-lampu-merah-dari-arah-depan.mp4:
+      scenario_label: "Mobil putih menerobos lampu merah"
+      enabled_violations:
+        - red_light_violation
+      priority:
+        - red_light_violation
+      target_classes:
+        red_light_violation:
+          - car
+          - truck
+          - bus
+      max_events_per_violation:
+        red_light_violation: 1
+    motor-potong-lajur-mobil-dari-kanan-ke-kiri.mp4:
+      scenario_label: "Motor potong lajur"
+      enabled_violations:
+        - unsafe_lane_change
+      priority:
+        - unsafe_lane_change
+      target_classes:
+        unsafe_lane_change:
+          - motorcycle
+          - person
+          - bicycle
+      zones:
+        lane_a:
+          - [[100, 200], [500, 200], [450, 420], [100, 420]]
+        lane_b:
+          - [[510, 200], [850, 200], [850, 420], [460, 420]]
+      max_events_per_violation:
+        unsafe_lane_change: 1
+    cctv-traffic-1.mp4:
+      scenario_label: "CCTV Traffic Video 1"
+      source_type: "cctv"
+      enabled_violations:
+        - wrong_direction
+        - restricted_area_stop
+      priority:
+        - wrong_direction
+        - restricted_area_stop
+    cctv-traffic-2.mp4:
+      scenario_label: "CCTV Traffic Video 2"
+      source_type: "cctv"
+      enabled_violations:
+        - wrong_direction
+        - restricted_area_stop
+      priority:
+        - wrong_direction
+        - restricted_area_stop
+    cctv-traffic-3.mp4:
+      scenario_label: "CCTV Traffic Video 3"
+      source_type: "cctv"
+      enabled_violations:
+        - wrong_direction
+        - restricted_area_stop
+      priority:
+        - wrong_direction
+        - restricted_area_stop
+    bendungan_hilir_1:
+      scenario_label: "Bendungan Hilir 1 CCTV"
+      source_type: "cctv"
+      enabled_violations:
+        - busway_lane_violation
+        - illegal_parking
+        - shoulder_lane_violation
+        - red_light_violation
+        - illegal_u_turn
+        - unsafe_lane_change
+      priority:
+        - busway_lane_violation
+        - illegal_parking
+        - illegal_u_turn
+        - red_light_violation
+        - unsafe_lane_change
+        - shoulder_lane_violation
+      target_classes:
+        busway_lane_violation:
+          - car
+          - motorcycle
+          - tru`ck
+          - angkot
+          - angkot_merah
+          - angkot_hijau
+          - angkot_biru
+      zones:
+        no_parking:
+          - [[300, 200], [365, 200], [490, 540], [200, 540]]
+        shoulder_lane:
+          - [[450, 200], [530, 200], [950, 540], [900, 540]]
+        busway:
+          - [
+              [0, 384],
+              [50, 387],
+              [95, 398],
+              [145, 408],
+              [190, 422],
+              [235, 433],
+              [285, 440],
+              [330, 445],
+              [380, 456],
+              [425, 463],
+              [475, 471],
+              [520, 480],
+              [565, 491],
+              [615, 496],
+              [660, 501],
+              [710, 504],
+              [755, 506],
+              [800, 512],
+              [850, 522],
+              [895, 532],
+              [960, 540],
+              [500, 540],
+              [500, 530],
+              [475, 528],
+              [450, 525],
+              [425, 520],
+              [400, 513],
+              [370, 507],
+              [345, 501],
+              [315, 496],
+              [290, 495],
+              [265, 495],
+              [240, 490],
+              [210, 482],
+              [185, 472],
+              [160, 468],
+              [135, 465],
+              [105, 461],
+              [80, 454],
+              [55, 444],
+              [30, 438],
+              [0, 432],
+            ]
+      perspective_src: [[320, 200], [480, 200], [950, 540], [300, 540]]
+      perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+    bendungan_hilir_2:
+      scenario_label: "Bendungan Hilir 2 CCTV"
+      source_type: "cctv"
+      enabled_violations:
+        - illegal_parking
+        - shoulder_lane_violation
+        - red_light_violation
+        - illegal_u_turn
+        - unsafe_lane_change
+      priority:
+        - illegal_parking
+        - illegal_u_turn
+        - red_light_violation
+        - unsafe_lane_change
+        - shoulder_lane_violation
+      zones:
+        no_parking:
+          - [[300, 200], [365, 200], [490, 540], [200, 540]]
+        shoulder_lane:
+          - [[450, 200], [530, 200], [950, 540], [900, 540]]
+      perspective_src: [[320, 200], [480, 200], [950, 540], [300, 540]]
+      perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+    bendungan_hilir_3:
+      scenario_label: "Bendungan Hilir 3 CCTV"
+      source_type: "cctv"
+      enabled_violations:
+        - busway_lane_violation
+        - illegal_parking
+        - shoulder_lane_violation
+        - red_light_violation
+        - illegal_u_turn
+        - unsafe_lane_change
+      priority:
+        - busway_lane_violation
+        - illegal_parking
+        - illegal_u_turn
+        - red_light_violation
+        - unsafe_lane_change
+        - shoulder_lane_violation
+      target_classes:
+        busway_lane_violation:
+          - car
+          - motorcycle
+          - truck
+          - angkot
+          - angkot_merah
+          - angkot_hijau
+          - angkot_biru
+      zones:
+        no_parking:
+          - [[300, 200], [365, 200], [490, 540], [200, 540]]
+        shoulder_lane:
+          - [[450, 200], [530, 200], [950, 540], [900, 540]]
+        busway:
+          - [
+              [0, 396],
+              [80, 407],
+              [160, 423],
+              [240, 435],
+              [320, 441],
+              [420, 445],
+              [520, 446],
+              [620, 442],
+              [720, 437],
+              [820, 430],
+              [900, 414],
+              [960, 405],
+
+              [960, 438],
+              [900, 447],
+              [820, 463],
+              [720, 476],
+              [620, 484],
+              [520, 487],
+              [420, 486],
+              [320, 479],
+              [240, 469],
+              [160, 462],
+              [80, 440],
+              [0, 426],
+            ]
+      perspective_src: [[180, 200], [600, 200], [800, 540], [150, 540]]
+      perspective_dst: [[240, 0], [720, 0], [720, 540], [240, 540]]
+
+gps:
+  mode: "static"
+  static:
+    latitude: -6.200000
+    longitude: 106.816666
+    road_name: "Jl. Sudirman, Jakarta"
+  mock_csv_path: "data/gps_mock.csv"
+
+backend:
+  enabled: true
+  url: "http://localhost:8001"
+
+outputs:
+  evidence_image_dir: "outputs/evidence/images"
+  plate_crop_dir: "outputs/evidence/plates"
+  event_jsonl_path: "outputs/events/events.jsonl"
+  event_csv_path: "outputs/events/events.csv"
+  candidate_jsonl_path: "outputs/events/parking_candidates.jsonl"
+  etle_export_dir: "outputs/exports/etle"
+
+parking_confirmation:
+  enabled: true
+  confirmation_window_minutes: 30
+  min_matching_score: 0.65
+  require_second_camera: false
+  allow_later_same_route_confirmation: true
+
+counting_lines:
+  - id: line_001
+    name: Main Traffic Count Line
+    points:
+      - [100, 400]
+      - [900, 400]
+    directions:
+      positive: forward
+      negative: backward
+
+parking_spots:
+  - id: spot_001
+    points:
+      - [100, 200]
+      - [200, 200]
+      - [200, 300]
+      - [100, 300]
+
+traffic_density:
+  medium_count: 8
+  high_count: 15
+  severe_count: 25
+  high_stopped_ratio: 0.3
+
+debug:
+  save_manual_snapshots_dir: "outputs/debug"
